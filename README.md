@@ -26,5 +26,7 @@ The script is in Python and it uses the binaries:
 
  * `flac`: decode flac files
  * `lame`: encode mp3 file
- * `mutagen`: used for pulling metadata from flac file like Artist, Album, Title
  * `id3v2`: save metadata to mp3 file
+
+The script also requires the [mutagen](https://pypi.python.org/pypi/mutagen/) library: used for pulling metadata from flac file like Artist, Album, Title
+
