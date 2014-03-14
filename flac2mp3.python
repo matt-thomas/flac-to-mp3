@@ -9,7 +9,7 @@ from mutagen.flac import FLAC
 from mutagen import *
 from subprocess import Popen, PIPE
 
-LAME_CMD = ['lame', '--vbr-new', '-V', '2']
+LAME_CMD = ['lame', '--vbr-new', '-V', '0']
 LAME_BITRATE = '320'
 LAME_BITRATES = (32,40,48,56,64,80,96,112,128,160,192,224,256,320)
 TAGS = ('Artist', 'Title', 'Album', 'Genre', 'TrackNumber', 'TrackTotal', 'DiscNumber', 'Comment', 'Date')
