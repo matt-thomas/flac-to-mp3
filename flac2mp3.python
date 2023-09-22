@@ -43,7 +43,7 @@ for file_name in listdir_fullpath(TARGET_DIRECTORY):
             except KeyError:
                 pass
     except mutagen.flac.FLACNoHeaderError:
-        print "Not a flac file"
+        print("Not a flac file")
 
     # set the title of the mp3
     # this is important because it'll be the filename
