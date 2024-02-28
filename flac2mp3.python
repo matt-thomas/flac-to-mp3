@@ -1,73 +1,60 @@
 #!/usr/bin/python
 
-# based loosely on https://www.github.com/shentonfreude/flac-to-mp3/
-
 import logging
 import os
 import sys
 from mutagen.flac import FLAC
-from mutagen import *
 from subprocess import Popen, PIPE
 
 LAME_CMD = ['lame', '--vbr-new', '-V', '0']
 LAME_BITRATE = '320'
-LAME_BITRATES = (32,40,48,56,64,80,96,112,128,160,192,224,256,320)
+LAME_BITRATES = (32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320)
 TAGS = ('Artist', 'Title', 'Album', 'Genre', 'TrackNumber', 'TrackTotal', 'DiscNumber', 'Comment', 'Date')
 
-if len(sys.argv) not in (2,3):
+if len(sys.argv) not in (2, 3):
     raise RuntimeError("Usage: %s TARGET_DIRECTORY [BITRATE]" % sys.argv[0])
 
-TARGET_DIRECTORY=sys.argv[1]
+TARGET_DIRECTORY = sys.argv[1]
 if len(sys.argv) > 2:
-    LAME_BITRATE = sys.argv[3]
+    LAME_BITRATE = sys.argv[2]  # Fixed index from 3 to 2 for bitrate argument
     if not int(LAME_BITRATE) in LAME_BITRATES:
-        raise RuntimeError("LAME bitrate=%s not in list=%s" % (
-                LAME_BITRATE, LAME_BITRATES))
+        raise RuntimeError("LAME bitrate=%s not in list=%s" % (LAME_BITRATE, LAME_BITRATES))
 LAME_CMD += ['-B', LAME_BITRATE]
 logging.warning("Setting bitrate to %s" % LAME_BITRATE)
 
-# helper function to get full path of a file
 def listdir_fullpath(d):
     return [os.path.join(d, f) for f in os.listdir(d)]
 
-# iterate through files in argument directory, convert flac files to mp3
 for file_name in listdir_fullpath(TARGET_DIRECTORY):
-    # get tags from flac file
     try:
         flac_file = FLAC(file_name)
         flac_tags = {}
         for tag in TAGS:
             try:
                 flac_tags[tag] = flac_file[tag][0]
-            # if tag doesn't work, don't worry
             except KeyError:
                 pass
-    except mutagen.flac.FLACNoHeaderError:
-        print("Not a flac file")
-
-    # set the title of the mp3
-    # this is important because it'll be the filename
-    try:
-        mp3_title = flac_tags['Title']
-    except:
-        mp3_title = file_name.replace('.flac', '')
-    try:
-        mp3_artist = flac_tags['Artist']
-    except:
-        mp3_artist = ""
-    try:
-        mp3_album = flac_tags['Album']
-    except:
-        mp3_album = ""
-    try:
-        mp3_track = flac_tags['TrackNumber']
-    except:
-        mp3_track = ""
-    mp3_path = ("%s.mp3" % mp3_title)
-    # test for existence and skip?
-    if os.path.isfile(mp3_path):
-        logging.warning("NOT overwriting extant destination file=%s" % mp3_path)
+    except Exception as e:
+        print(f"Not a flac file or error reading file {file_name}: {e}")
         continue
+
+    try:
+        mp3_title = flac_tags.get('Title', os.path.basename(file_name).replace('.flac', ''))
+    except KeyError:
+        mp3_title = os.path.basename(file_name).replace('.flac', '')
+
+    mp3_artist = flac_tags.get('Artist', "")
+    mp3_album = flac_tags.get('Album', "")
+    mp3_track = flac_tags.get('TrackNumber', "")
+    
+    # Prepend the FLAC file path to the MP3 file name
+    mp3_file_name = f"{mp3_artist} - {mp3_title}.mp3" if mp3_artist else f"{mp3_title}.mp3"
+    mp3_path = os.path.join(os.path.dirname(file_name), mp3_file_name)
+
+    if os.path.isfile(mp3_path):
+        logging.warning(f"NOT overwriting extant destination file={mp3_path}")
+        continue
+
     lame_cmd = LAME_CMD + ['-', mp3_path]
     p1 = Popen(["flac", "-c", "-d", "-s", file_name], stdout=PIPE)
     p2 = Popen(lame_cmd, stdin=p1.stdout, stdout=PIPE)
